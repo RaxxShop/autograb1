@@ -1,0 +1,113 @@
+print("made by ylzk on dc")
+
+local Players = game:GetService("Players")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+--gui its ahh i coded it in 10mins
+local gui = Instance.new("ScreenGui")
+gui.Name = "PromptProgressGui"
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromScale(0.3, 0.035)
+frame.Position = UDim2.fromScale(0.35, 0.9)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.Visible = false
+frame.Parent = gui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 12)
+frameCorner.Parent = frame
+
+local bar = Instance.new("Frame")
+bar.Size = UDim2.fromScale(0, 1)
+bar.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+bar.BorderSizePixel = 0
+bar.Parent = frame
+
+local barCorner = Instance.new("UICorner")
+barCorner.CornerRadius = UDim.new(0, 12)
+barCorner.Parent = bar
+
+local text = Instance.new("TextLabel")
+text.Size = UDim2.fromScale(1, 1)
+text.BackgroundTransparency = 1
+text.Text = "0%"
+text.TextColor3 = Color3.new(1, 1, 1)
+text.TextScaled = true
+text.Font = Enum.Font.GothamBold
+text.Parent = frame
+
+--SETTINGS
+local activePrompt = nil
+local startTime = 0
+local holdDuration = 1.5 --CHANGE ONLY THIS!
+local renderConn = nil
+
+local function colorFromProgress(p)
+	if p < 0.5 then
+		return Color3.fromRGB(255, math.floor(p * 2 * 255), 0)
+	else
+		return Color3.fromRGB(math.floor((1 - p) * 2 * 255), 255, 0)
+	end
+end
+
+local function stopBar()
+	if renderConn then
+		renderConn:Disconnect()
+		renderConn = nil
+	end
+	frame.Visible = false
+	bar.Size = UDim2.fromScale(0, 1)
+	text.Text = "0%"
+	activePrompt = nil
+end
+
+ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt)
+	activePrompt = prompt
+	startTime = os.clock()
+	holdDuration = prompt.HoldDuration
+
+	frame.Visible = true
+	bar.Size = UDim2.fromScale(0, 1)
+	text.Text = "0%"
+
+	renderConn = RunService.RenderStepped:Connect(function()
+		if not activePrompt then return end
+
+		
+	    local progress = math.clamp(
+			(os.clock() - startTime) / holdDuration,
+			0,
+			0.99
+		)
+
+		bar.Size = UDim2.fromScale(progress, 1)
+		bar.BackgroundColor3 = colorFromProgress(progress)
+		text.Text = math.floor(progress * 100) .. "%"
+	end)
+end)
+
+ProximityPromptService.PromptButtonHoldEnded:Connect(function()
+	stopBar()
+end)
+
+ProximityPromptService.PromptTriggered:Connect(function()
+	bar.Size = UDim2.fromScale(1, 1)
+	bar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	text.Text = "100%"
+	task.wait(0.05)
+	stopBar()
+end)
+
+ProximityPromptService.PromptHidden:Connect(function()
+	stopBar()
+end)
+
+print("made by @ylzk on dc")
